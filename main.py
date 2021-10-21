@@ -10,38 +10,8 @@ path_o = '/home/fer/Control_servo_visual/Code/Practico_2.0/Pictures/'
 path_w = '/home/fer/Control_servo_visual/Code/Practico_2.0/Modificadas/'                                                
 path_c = '/home/fer/Control_servo_visual/Code/Practico_2.0/Calibration/'
 path_cw = '/home/fer/Control_servo_visual/Code/Practico_2.0/Results_calibration/'
+path_l = '/home/fer/Control_servo_visual/Code/Practico_2.0/Lines/'
 
-def mediana(img, N, contador, path):
-    print("Filtro Utilizando Mediana")
-
-    ## definicion los valores del kernel
-    a = int((N-1)/2)
-    b = int((N-1)/2)
-    
-    ## Creacion de la matriz igual
-    new = np.array(img, dtype=np.float32)
-
-    ## Bucle donde se ejecuta el algoritmo
-    for i in range(a, img.shape[0]-a):
-        for j in range(b, img.shape[1]- b):
-            A = img[i-a:i+(a+1),j-b:j+(b+1)]
-            ordenada =np.sort(A, axis = None)
-            mitad = int((ordenada.shape[0]/2)+1)
-            new[i,j] = ordenada[mitad]
-
-    new = np.round(new)
-    new = np.uint8(new)
-
-    dst = cv2.medianBlur(img, N)
-
-    ## guardar la imagen del sistema
-    
-    ## guardar la iamgen generada
-    name = "Pregunta_22_{}.png".format(contador)
-    name1 = "Pregunta_22_opencv_{}.png".format(contador)
-    guardar(path, name, new)
-    guardar(path, name1, dst)
-    return new
 
 def all(imgs, f, N ,path):
     contador = 0
@@ -62,9 +32,40 @@ def main():
     #all(imgs, gauss_f, 3, path_w)
 
     ## Pregunta 2 filtro media
-    all(imgs, mediana, 3, path_w)
+    #all(imgs, mediana, 3, path_w)
 
+    ## Pregunta 3 Filtro de lineas
+    #line , original = lines(path_l, path_w)
+    #show(original, line)
+
+    ## Pregunta 4 gradiente de las imagenes
+    #x, y , s, m = gradient(path_w, path_o)
+
+    ## Pregunta 5 Robert, Prewitt, Sobel y Frei-Chen
+    ## Robertrs
+    #all(imgs, roberts, 3, path_w)
     
+    ## Prewwit
+    #all(imgs, prewitt, 3, path_w)
+
+    ## Sobel
+    #all(imgs, sobel, 3, path_w)
+
+    ## Frei Chen
+    #all(imgs, frei_chen, 3, path_w)
+
+    ## Pregunta 6 Laplacian
+    #all(imgs, laplacian, 3, path_w)
+
+    ## Pregunta 7 High Boost
+    #all(imgs, highboost, 7, path_w)
+
+    ## Pregunta 8 High boost modificado
+    #all(imgs, highboost_f, 7, path_w)
+
+    #3 Pregunta 9 Lineas Canny
+    #all(imgs, filtro_canny, 3, path_w)
+
 
 if __name__=='__main__':
     try:

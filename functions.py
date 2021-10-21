@@ -106,8 +106,10 @@ def Calibration(dir_r, dir_w):
 def guardar(direccion, name, new):
     cv2.imwrite(os.path.join(direccion, name), new)
     return None
-def median(img):                                                                                                                                                                               
-     kernel = np.ones((3,3), np.float32)/9                                                                               
+def median(img, N):                                                                                                                                                                               
+     kernel = np.ones((N,N), np.float32)
+     suma = np.sum(kernel)
+     kernel = kernel/suma                                                                         
      depth = -1                                                                                                          
      anchor = (-1, -1)                                                                                                   
      delta = 0.0                                                                                                         
@@ -211,4 +213,370 @@ def gauss_f(img, N, contador, path):
 
     return new 
    
-                   
+def mediana(img, N, contador, path):
+    print("Filtro Utilizando Mediana")
+
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+    
+    ## Creacion de la matriz igual
+    new = np.array(img, dtype=np.float32)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            ordenada =np.sort(A, axis = None)
+            mitad = int((ordenada.shape[0]/2)+1)
+            new[i,j] = ordenada[mitad]
+
+    new = np.round(new)
+    new = np.uint8(new)
+
+    dst = cv2.medianBlur(img, N)
+
+    ## guardar la iamgen generada
+    name = "Pregunta_22_{}.png".format(contador)
+    name1 = "Pregunta_22_opencv_{}.png".format(contador)
+    guardar(path, name, new)
+    guardar(path, name1, dst)
+    return new
+
+def lines_o(pixel, a):
+    if pixel >= a: 
+        f = 255 
+    else:
+        f = 0
+    return f
+
+def amarillo(pixels, a = 0.4):
+    if pixels >= a:
+        r = 255
+        g = 233
+    else:
+        r = 0
+        g = 0
+    return r, g
+
+
+def lines(path, path_b):
+
+    img = data(path, 0)
+    ## Filtro de las imagenes y generacion de lineas de un color respectivo
+    img = img[0,:,:]/255
+    print("Filtro de Lineas Horizontales")
+    w = np.array([[-1,-1,-1],[2,2,2],[-1,-1,-1]], dtype = np.float64)
+    w1 = np.array([[-1,-1,2],[-1,2,-1],[2,-1,-1]], dtype = np.float64)
+    w2 = np.array([[2,-1,-1],[-1,2,-1],[-1,-1,2]], dtype = np.float64)
+    N = w.shape[0]
+    
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    blue= np.zeros((img.shape[0], img.shape[1]), dtype = np.float64)
+    green = np.zeros((img.shape[0], img.shape[1]), dtype = np.float64)
+    green1 = np.zeros((img.shape[0], img.shape[1]), dtype = np.float64)
+    red = np.zeros((img.shape[0], img.shape[1]), dtype = np.float64)
+    red1 = np.zeros((img.shape[0], img.shape[1]), dtype = np.float64)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            ## Seccion para los 3 colores binarios
+            blue[i,j] = lines_o(np.trace(A@w.T),a = 0.3)
+            green[i,j] = lines_o(np.trace(A@w), a = 0.3)
+            red[i,j] = lines_o(np.trace(A@w1.T), a = 0.25)
+            ## Seccion para el cor amarillo
+            red1[i,j], green1[i,j] = amarillo(np.trace(A@w2.T), a = 0.25)
+
+    ## Seccion apra generar el color amrillo del sistem
+    red = cv2.bitwise_or(red, red1)
+    green = cv2.bitwise_or(green, green1)
+    
+    ## Generar la imagen nuevamente
+    new = cv2.merge([blue, green, red])
+    name = "Pregunta_3_{}.png".format(0)
+    guardar(path_b, name, new)
+    return new, img
+
+def gradient(path,path_image):
+    ## Cargar la iamgen deseada
+    imgs = data(path_image, 0)
+    img = imgs[0,:,:]
+    ## Funcion para calcular el gradiente de una imagen
+    print('Calculo del gradiente de la imagen')
+    a = 1
+    b = 1
+    ## definicion de las matrices vacias para el cal;culo del gradiente respectivo
+    gradiente_x = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    gradiente_y = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    magnitude = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    angle = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]-b):
+            gradiente_y[i, j] = int(img[i+1, j])-int(img[i-1, j])
+            gradiente_x[i, j] = int(img[i, j+1])-int(img[i, j-1])
+            magnitude[i, j] = np.sqrt(gradiente_x[i, j]**2+gradiente_y[i, j]**2)
+            angle[i, j] = np.arctan2(gradiente_y[i, j], gradiente_x[i, j])
+            
+    gradient_x_c = cv2.convertScaleAbs(gradiente_x)
+    gradient_y_c = cv2.convertScaleAbs(gradiente_y)
+    magnitude_c = cv2.convertScaleAbs(magnitude)
+    suma = cv2.addWeighted(gradient_x_c, 0.5, gradient_y_c, 0.5, 0)
+
+    ## Seccion para guardar las imagenes resultantes
+    name1 = "Pregunta_4_1{}.png".format(0)
+    name2 = "Pregunta_4_2{}.png".format(0)
+    name3 = "Pregunta_4_3{}.png".format(0)
+    name4 = "Pregunta_4_4{}.png".format(0)
+
+    guardar(path, name1, gradient_x_c)
+    guardar(path, name2, gradient_y_c)
+    guardar(path, name3, suma)
+    guardar(path, name4, magnitude_c)
+
+    print(angle[25:150,10:20])
+
+    return gradient_x_c, gradient_y_c, suma, magnitude_c
+
+def roberts(img, N, contador, path):
+    ## Calculo de lineas usando Roberts
+    print("Calculo de bordes usando Roberts")
+
+    kernelx = np.array([[0, 0, 0],[0, 0, 1],[0, -1, 0]], dtype = int)
+    kernely = np.array([[0, 0, 0],[0, 1, 0],[0, 0, -1]], dtype = int)
+    N = kernelx.shape[0]
+    
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    convolucion_x = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+    convolucion_y = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            convolucion_x[i, j] = operacion(A, kernelx)
+            convolucion_y[i, j] = operacion(A, kernely)
+
+    absx = cv2.convertScaleAbs(convolucion_x)
+    absy = cv2.convertScaleAbs(convolucion_y)
+
+    ## Prueba usando funciones open cv
+    x = cv2.filter2D(img, -1, kernelx)
+    y = cv2.filter2D(img, -1, kernely)
+
+    xabs = cv2.convertScaleAbs(x)
+    yabs = cv2.convertScaleAbs(y)
+
+    ## generacion de la imagen usando opencv
+    Roberts_1 = cv2.addWeighted(xabs, 0.5, yabs, 0.5, 0)
+
+    ## generacion de la imagen manualmente
+    Roberts = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+
+    name = "Pregunta_5_{}.png".format(contador)
+    name1 = "Pregunta_5_opencv_{}.png".format(contador)
+    guardar(path, name, Roberts)
+    guardar(path, name1, Roberts_1)
+
+    return Roberts
+
+def prewitt(img, N, contador, path):
+    ## Calculo de lineas usando Roberts
+    print("Calculo de bordes usando Prewitt")
+
+    kernelx = np.array([[-1, 0, 1],[-1, 0, 1],[-1, 0, 1]], dtype = int)
+    kernely = np.array([[-1, -1, -1],[0, 0, 0],[1, 1, 1]], dtype = int)
+    N = kernelx.shape[0]
+
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    convolucion_x = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    convolucion_y = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            convolucion_x[i, j] = operacion(A, kernelx)
+            convolucion_y[i, j] = operacion(A, kernely) 
+
+    absx = cv2.convertScaleAbs(convolucion_x)
+    absy = cv2.convertScaleAbs(convolucion_y)
+
+    ## Prueba usando funciones open cv
+    x = cv2.filter2D(img, -1, kernelx)
+    y = cv2.filter2D(img, -1, kernely)
+
+    xabs = cv2.convertScaleAbs(x)
+    yabs = cv2.convertScaleAbs(y)
+
+    # generar las iamgenes del sistema
+    Prewitt1 = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+    Prewitt2 = cv2.addWeighted(xabs, 0.5, yabs, 0.5, 0)
+
+    ## Seccion para guardar las imagenes del sistema
+    name = "Pregunta_5_1_{}.png".format(contador)
+    name1 = "Pregunta_5_1_opencv_{}.png".format(contador)
+    guardar(path, name, Prewitt1)
+    guardar(path, name1, Prewitt2)
+    return Prewitt1
+
+def sobel(img, N, contador, path):
+    ## Calculo de lineas usando Roberts
+    print("Calculo de bordes usando sobel")
+
+    kernelx = np.array([[-1, 0, 1],[-2, 0, 2],[-1, 0, 1]], dtype = int)
+    kernely = np.array([[-1, -2, -1],[0, 0, 0],[1, 2, 1]], dtype = int)
+    N = kernelx.shape[0]
+    
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    convolucion_x = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+    convolucion_y = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            convolucion_x[i, j] = operacion(A, kernelx)
+            convolucion_y[i, j] = operacion(A, kernely)
+
+    ## Calculo del sobel de manera manual
+    absx = cv2.convertScaleAbs(convolucion_x)
+    absy = cv2.convertScaleAbs(convolucion_y)
+
+    ## Prueba usando funciones open cv
+    sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+    
+    sobelxabs = cv2.convertScaleAbs(sobelx)
+    sobelyabs = cv2.convertScaleAbs(sobely)
+
+    ## Generacion de los nombres de la imagenes a ser guardadas
+    name1 = "Pregunta_5_2_x_{}.png".format(contador)
+    name2 = "Pregunta_5_2_y_{}.png".format(contador)
+    name3 = "Pregunta_5_2_x_opencv_{}.png".format(contador)
+    name4 = "Pregunta_5_2_y_opencv_{}.png".format(contador)
+
+    guardar(path, name1, absx)
+    guardar(path, name2, absy)
+    guardar(path, name3, sobelxabs)
+    guardar(path, name4, sobelyabs)
+
+    ## Completa 
+    new = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+    
+    return new
+
+
+def frei_chen(img, N, contador, path):
+    ## Calculo de lineas usando Roberts
+    print("Calculo de bordes usando Frei_Chen")
+
+    kernelx = np.array([[-1, 0, 1],[-np.sqrt(2), 0, np.sqrt(2)],[-1, 0, 1]], dtype = np.float32)
+    kernely = np.array([[-1, -np.sqrt(2), -1],[0, 0, 0],[1, np.sqrt(2), 1]], dtype = np.float32)
+    N = kernelx.shape[0]
+
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    convolucion_x = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+    convolucion_y = np.zeros((img.shape[0], img.shape[1]), dtype=np.float64)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            convolucion_x[i, j] = operacion(A, kernelx)
+            convolucion_y[i, j] = operacion(A, kernely)
+
+    ## Calculo del sobel de manera manual
+    absx = cv2.convertScaleAbs(convolucion_x)
+    absy = cv2.convertScaleAbs(convolucion_y)
+
+    ## Generacion de los nombres de la imagenes a ser guardadas
+    name1 = "Pregunta_5_3_x_{}.png".format(contador)
+    name2 = "Pregunta_5_3_y_{}.png".format(contador)
+
+    guardar(path, name1, absx)
+    guardar(path, name2, absy)
+
+    new = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+
+    return new
+
+def laplacian(img, N, contador, path):
+    ## Funcion para calcular el gradiente de una imagen
+    print("Calculando el gain")
+    a = 1
+    b = 1
+    ## definicion de las matrices vacias para el cal;culo del gradiente respectivo
+    gain = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+    laplaciano = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
+
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]-b):
+            gain[i, j] = 5*img[i, j] - (int(img[i+1, j])+int(img[i-1, j])+int(img[i, j+1])+int(img[i, j-1]))
+            laplaciano[i, j] = int(img[i+1, j])+int(img[i-1, j])+int(img[i, j+1])+int(img[i, j-1])-4*img[i, j]
+
+    gain_c = cv2.convertScaleAbs(gain)
+    laplaciano_c = cv2.convertScaleAbs(laplaciano)
+
+    name1 = "Pregunta_6_Laplacian_{}.png".format(contador)
+    name2 = "Pregunta_6_Image_gain_{}.png".format(contador)
+
+    guardar(path, name1, laplaciano_c)
+    guardar(path, name2, gain_c)
+
+    return gain_c 
+
+
+def highboost(img, N, contador, path):
+    print("High boost normal")
+    paso_bajo = median(img, N)
+    paso_alto = cv2.absdiff(img, paso_bajo)
+    name1 = "Pregunta_7_{}.png".format(contador)
+    guardar(path, name1, paso_alto)
+    return paso_alto
+
+def highboost_f(img, N, contador, path):
+    print("High Boost modificado")
+    paso_bajo = median(img, N)
+    a = 1
+    aux = a*img
+    aux = np.uint8(aux)
+    paso_alto = cv2.absdiff(aux, paso_bajo)
+    paso_alto = cv2.convertScaleAbs(paso_alto)
+    name1 = "Pregunta_8_{}.png".format(contador)
+    guardar(path, name1, paso_alto)
+    return paso_alto
+
+
+def filtro_canny(img, N, contador, path):
+    print("Deteccionde lineas usando canny")
+    a = 10
+    b = 200
+    ## filtro de lineas usando la funcion de opencv para canny
+    canny = cv2.Canny(img, a, b)
+    ## Guardaar la imagen en el sistema
+    name1 = "Pregunta_9_{}.png".format(contador)
+    guardar(path, name1, canny)
+    return canny
