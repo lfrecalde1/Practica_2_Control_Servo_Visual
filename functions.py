@@ -587,9 +587,11 @@ def laplacian(img, N, contador, path):
 
     name1 = "Pregunta_6_Laplacian_{}.png".format(contador)
     name2 = "Pregunta_6_Image_gain_{}.png".format(contador)
+    name3 = "Pregunta_6_Laplacian_Original_{}.png".format(contador)
 
     guardar(path, name1, laplaciano_c)
     guardar(path, name2, gain_c)
+    guardar(path, name3, img)
 
     return gain_c 
 
@@ -625,3 +627,43 @@ def filtro_canny(img, N, contador, path):
     name1 = "Pregunta_9_{}.png".format(contador)
     guardar(path, name1, canny)
     return canny
+
+
+def diferencia_gauss(img,path):
+    contador = 0
+    s1 = 1.5
+    s2 = 0.9
+    N = 5
+    print("Diferencia Gaussiana")
+    G1 = gauss_matrix(img, s1, N)
+    G2 = gauss_matrix(img, s2, N)
+
+    a = gauss(img, G2)
+    b = gauss(img, G1)
+
+    diferencce = cv2.absdiff(a, b)
+
+    name1 = "Pregunta_10_{}.png".format(contador)
+    guardar(path, name1, diferencce)
+
+    return diferencce
+
+def gauss(img, w = np.array([[1,4,7,4,1],[4,16,26,16,4],[7,26,41,26,7],[4,16,26,16,4],[1,4,7,4,1]])/273):
+    print("Filtro utilizando una funcion Gauss")
+    N = w.shape[0]
+
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    new = np.array(img, dtype=np.float64)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            new[i,j] = (operacion(A, w))
+
+    new = np.array(new, dtype = np.uint8)
+    return new

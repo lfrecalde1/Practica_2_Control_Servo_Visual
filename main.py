@@ -43,7 +43,7 @@ def main():
 
     ## Pregunta 5 Robert, Prewitt, Sobel y Frei-Chen
     ## Robertrs
-    all(imgs, roberts, 3, path_w)
+    #all(imgs, roberts, 3, path_w)
     
     ## Prewwit
     #all(imgs, prewitt, 3, path_w)
@@ -63,8 +63,11 @@ def main():
     ## Pregunta 8 High boost modificado
     #all(imgs, highboost_f, 7, path_w)
 
-    #3 Pregunta 9 Lineas Canny
+    ## Pregunta 9 Lineas Canny
     #all(imgs, filtro_canny, 3, path_w)
+    
+    ## Pregunta 10 diferencia Gauss
+    diferencia_gauss(imgs[0, :, :], path_w)
 
 
 if __name__=='__main__':
