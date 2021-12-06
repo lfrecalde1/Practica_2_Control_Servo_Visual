@@ -26,13 +26,13 @@ def main():
     #Calibration(path_c, path_cw)
 
     ## Pregunta 2 filtro media
-    #all(imgs, conv, 3, path_w)
+    #all(imgs, conv, 7, path_w)
 
     ## Pregunta 2 filtro Gaussiano
-    #all(imgs, gauss_f, 3, path_w)
+    #all(imgs, gauss_f, 7, path_w)
 
     ## Pregunta 2 filtro media
-    #all(imgs, mediana, 3, path_w)
+    #all(imgs, mediana, 7, path_w)
 
     ## Pregunta 3 Filtro de lineas
     #line , original = lines(path_l, path_w)
@@ -43,7 +43,7 @@ def main():
 
     ## Pregunta 5 Robert, Prewitt, Sobel y Frei-Chen
     ## Robertrs
-    #all(imgs, roberts, 3, path_w)
+    all(imgs, roberts, 3, path_w)
     
     ## Prewwit
     #all(imgs, prewitt, 3, path_w)

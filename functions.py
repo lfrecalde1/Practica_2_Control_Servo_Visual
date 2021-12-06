@@ -106,6 +106,7 @@ def Calibration(dir_r, dir_w):
 def guardar(direccion, name, new):
     cv2.imwrite(os.path.join(direccion, name), new)
     return None
+
 def median(img, N):                                                                                                                                                                               
      kernel = np.ones((N,N), np.float32)
      suma = np.sum(kernel)
@@ -148,7 +149,7 @@ def conv(img, N, contador, path):
     new = np.uint8(new)
     
     ## Generacion del resultado por opencv2
-    dst = median(img)
+    dst = median(img, N)
 
     ## guardar la iamgen generada
     name = "Pregunta_2_{}.png".format(contador)
@@ -263,8 +264,15 @@ def amarillo(pixels, a = 0.4):
 def lines(path, path_b):
 
     img = data(path, 0)
+
     ## Filtro de las imagenes y generacion de lineas de un color respectivo
     img = img[0,:,:]/255
+
+    ## Image rotation horizontal to vertical
+    #(h, w) = img.shape[:2]
+    #(cX, cY) = (w//2, h//2)
+    #factor = cv2.getRotationMatrix2D((cX, cY), 90, 1.0)
+    #img = cv2.warpAffine(img, factor, (w, h))
     print("Filtro de Lineas Horizontales")
     w = np.array([[-1,-1,-1],[2,2,2],[-1,-1,-1]], dtype = np.float64)
     w1 = np.array([[-1,-1,2],[-1,2,-1],[2,-1,-1]], dtype = np.float64)
@@ -322,7 +330,7 @@ def gradient(path,path_image):
             gradiente_y[i, j] = int(img[i+1, j])-int(img[i-1, j])
             gradiente_x[i, j] = int(img[i, j+1])-int(img[i, j-1])
             magnitude[i, j] = np.sqrt(gradiente_x[i, j]**2+gradiente_y[i, j]**2)
-            angle[i, j] = np.arctan2(gradiente_y[i, j], gradiente_x[i, j])
+            angle[i, j] = np.arctan2(gradiente_x[i, j], gradiente_y[i, j])
             
     gradient_x_c = cv2.convertScaleAbs(gradiente_x)
     gradient_y_c = cv2.convertScaleAbs(gradiente_y)
@@ -334,13 +342,50 @@ def gradient(path,path_image):
     name2 = "Pregunta_4_2{}.png".format(0)
     name3 = "Pregunta_4_3{}.png".format(0)
     name4 = "Pregunta_4_4{}.png".format(0)
+    name5 = "Pregunta_4_5{}.png".format(0)
 
     guardar(path, name1, gradient_x_c)
     guardar(path, name2, gradient_y_c)
     guardar(path, name3, suma)
     guardar(path, name4, magnitude_c)
 
-    print(angle[25:150,10:20])
+    # Interest 
+    u_i_min = 300
+    u_i_max = 301
+    v_i_min = 150
+    v_i_max = 200
+    
+    factor_u = 40
+    
+    ## Draw Rectagle 
+    ## Coordinates of rectagle
+    start_point = (u_i_min-factor_u, v_i_min)
+    end_point = (u_i_max+factor_u, v_i_max)
+
+    color = (255, 255, 0)
+
+    thickness = 2
+    
+    img_interts = cv2.rectangle(suma, start_point, end_point, color, thickness)
+    img_interts = cv2.line(img_interts, (u_i_min,v_i_min), (u_i_min, v_i_max), (100, 0, 0), thickness)
+    guardar(path, name5, img_interts)
+
+    ## GENERATE DATA TO PLOT
+    interes_zone = angle[u_i_min:u_i_max,v_i_min:v_i_max]
+    x_zone = np.arange(150,200).reshape(1, interes_zone.shape[1])
+
+    ## Fancy plot
+    with plt.style.context(['science','grid']):
+        fig, ax = plt.subplots()
+        ax.plot(x_zone[0,:], interes_zone[0,:], label='$Angle$')
+        ax.legend(title='')
+        ax.legend( fontsize='x-small')
+        ax.autoscale(tight=True)
+        #ax[0].set(**pparam)
+        ax.set_ylabel('Angle ($rad$)')
+        ax.set_xlabel('Pixel')
+        #plt.show()
+        fig.savefig('/home/fer/Control_servo_visual/Code/Practico_2.0/Modificadas/Angle.eps', format = 'eps')
 
     return gradient_x_c, gradient_y_c, suma, magnitude_c
 
