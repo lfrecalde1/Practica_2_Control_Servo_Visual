@@ -67,7 +67,12 @@ def main():
     #all(imgs, filtro_canny, 3, path_w)
     
     ## Pregunta 10 diferencia Gauss
-    diferencia_gauss(imgs[0, :, :], path_w)
+    #diferencia_gauss(imgs[0, :, :], path_w)
+
+    ## Laplacian Gaussian
+    #laplacian_gauss_matrix(imgs[0, :, :], s = 1, N=5)
+    #gauss_matrix(imgs[0, :, :], s = 1, N = 5)
+    all(imgs, laplacian_gauss, 5, path_w)
 
 
 if __name__=='__main__':

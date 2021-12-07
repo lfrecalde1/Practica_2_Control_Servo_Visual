@@ -181,6 +181,106 @@ def gauss_matrix(img, s = 1, N = 5):
     
     return normado
 
+
+def laplacian_gauss_matrix(img, s = 1, N = 5):
+    print("Grafica del el kernel a aplicar")
+    a = int((N-1)/2)
+    b = int((N-1)/2)+1
+    x = np.arange(-a, b, 1)
+    y = np.arange(-a, b, 1)
+    x, y = np.meshgrid(x, y)
+
+    factor_1 = ((x**(2)+y**(2)-2*s**(2))/s**(4))
+    factor_2 = np.exp(-(x**2+y**2)/(2*(s)**2))
+
+    G = ((1)/(2*np.pi*s**2))*factor_1*factor_2
+
+    maximo = np.amax(G)
+    minimo = np.amin(G)
+    normado =G/(np.max(G))
+    plt.matshow(G)
+    plt.colorbar()
+    plt.show()
+    
+    return G
+
+
+def laplacian_gauss(img, N, contador, path):
+
+    w = laplacian_gauss_matrix(img, 1, N)
+
+    print("Filtro utilizando una funcion Laplacian Gauss")
+    N = w.shape[0]
+
+    ## definicion los valores del kernel
+    a = int((N-1)/2)
+    b = int((N-1)/2)
+
+    ## Creacion de la matriz igual
+    new = np.array(img, dtype=np.float32)
+
+    ## Bucle donde se ejecuta el algoritmo
+    for i in range(a, img.shape[0]-a):
+        for j in range(b, img.shape[1]- b):
+            A = img[i-a:i+(a+1),j-b:j+(b+1)]
+            new[i,j] = operacion(A, w)
+
+    new = np.round(new)
+    new = np.uint8(new)
+
+    dst =cv2.GaussianBlur(img, (N,N), cv2.BORDER_CONSTANT)
+    laplacian_opencv = cv2.Laplacian(dst, cv2.CV_64F)
+
+    ## guardar la iamgen generada
+    name = "Pregunta_final_{}.png".format(contador)
+    #name1 = "Pregunta_final_opencv_{}.png".format(contador)
+
+    new_final = Zero_crossing(laplacian_opencv)
+    guardar(path, name, new_final)
+
+    return new_final
+
+def Zero_crossing(image):
+    z_c_image = np.zeros(image.shape)
+
+    # For each pixel, count the number of positive
+    # and negative pixels in the neighborhood
+
+    for i in range(1, image.shape[0] - 1):
+        for j in range(1, image.shape[1] - 1):
+            negative_count = 0
+            positive_count = 0
+            neighbour = [image[i+1, j-1],image[i+1, j],image[i+1, j+1],image[i, j-1],image[i, j+1],image[i-1, j-1],image[i-1, j],image[i-1, j+1]]
+            d = max(neighbour)
+            e = min(neighbour)
+            for h in neighbour:
+                if h>0:
+                    positive_count += 1
+                elif h<0:
+                    negative_count += 1
+
+
+            # If both negative and positive values exist in
+            # the pixel neighborhood, then that pixel is a
+            # potential zero crossing
+
+            z_c = ((negative_count > 0) and (positive_count > 0))
+
+            # Change the pixel value with the maximum neighborhood
+            # difference with the pixel
+
+            if z_c:
+                if image[i,j]>0:
+                    z_c_image[i, j] = image[i,j] + np.abs(e)
+                elif image[i,j]<0:
+                    z_c_image[i, j] = np.abs(image[i,j]) + d
+
+    # Normalize and change datatype to 'uint8' (optional)
+    z_c_norm = z_c_image/z_c_image.max()*255
+    z_c_image = np.uint8(z_c_norm)
+
+    return z_c_image
+
 def gauss_f(img, N, contador, path):
 
     w = gauss_matrix(img, 1, N)
